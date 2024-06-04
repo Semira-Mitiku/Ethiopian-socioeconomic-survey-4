@@ -10,12 +10,12 @@ library(ggplot2) #
 source("CEPHaStat_3.R") # Functions for the plots
 
 # data sets
-ess_date <- read_csv(here("ESS4/sect_cover_hh_w4.csv"))
-ess_unit_cf <-read.csv(here("CF_Kevin_I.csv"))
-ess_afe <-read.csv(here("eth18_hme.csv"))
-ess_gps <- read.csv(here("ESS4/ETH_HouseholdGeovariables_Y4.csv"))
-ess_wealth <- read_csv(here("ESS4/cons_agg_w4.csv"))
-ess_cons <- read_csv(here("ESS4/sect6a_hh_w4.csv")) |> 
+ess_date <- read_csv(here("sect_cover_hh_w4.csv"))
+ess_unit_cf <-read.csv(here("Conversion factor.csv"))
+ess_afe <-read.csv(here("afe_ame.csv"))
+ess_gps <- read.csv(here("ETH_HouseholdGeovariables_Y4.csv"))
+ess_wealth <- read_csv(here("cons_agg_w4.csv"))
+ess_cons <- read_csv(here("sect6a_hh_w4.csv")) |> 
 select("household_id", "item_cd", "saq14", "pw_w4", "saq01",  "saq02", "saq03", "s6aq01_os", "s6aq01", "s6aq02a", "s6aq02b", "s6aq02b_os", "s6aq04") |>
 rename(urbanRural = saq14,
        zone = saq02,
@@ -26,95 +26,6 @@ rename(urbanRural = saq14,
        othermeasuringUnit = s6aq02b_os,
        birrPurchasedFood = s6aq04) |>
 filter(consumedYN == "1. YES")
-# library(vroom)
-# dat <- vroom("ESS4/sect6a_hh_w4.csv")
-# problems(dat) |> View()
-
-# ess_health <- read_csv(here("ESS4/sect3_hh_w4.csv"))
-# ess_roster <- read_csv(here("ESS4/sect1_hh_w4.csv"))
-# ame_factors <-
-#   read.csv(here::here("ESS4/mwi-ihs5-sample-data/IHS5_AME_FACTORS_vMAPS.csv")) |>
-#   janitor::clean_names()
-
-# ame_spec_factors <-
-#   read.csv(here::here("ESS4",
-#                       "mwi-ihs5-sample-data",
-#                       "IHS5_AME_SPEC_vMAPS.csv")) |> # energy from breast milk regardless of sex
-#   janitor::clean_names() |>
-#   
-#   # Rename the population column to cat and select the relevant columns
-#   dplyr::rename(cat = population) |>
-#   dplyr::select(cat, ame_spec, afe_spec)
-# 
-# # Extra energy requirements for pregnancy and Illness
-# pregnantPersons <- ess_health |>
-#   dplyr::filter(s3q04_1 == "2. PRENATAL CHECKUP" |
-#                   s3q04_2 == "2. PRENATAL CHECKUP") |>
-#   # NOTE: 2. PRENATAL CHECKUP is the code for pregnancy in this survey
-#   dplyr::mutate(ame_preg = 0.17, afe_preg = 0.215) |> # These values are best explained by Gareth and Lucia or Louise
-#   dplyr::select(household_id, ame_preg, afe_preg) |>
-#   group_by(household_id) |>
-#   summarise(ame_preg = sum(ame_preg),
-#             afe_preg = sum(afe_preg)) |> # Checking weather there are more than one pregnant mother per household
-#   arrange(household_id)
-# 
-# 
-# # Process the roster data and rename variables to be more intuitive
-# aMFe_summaries <- ess_roster |>
-#   # Rename the variables to be more intuitive
-#   dplyr::rename(sex = s1q02, age_y = s1q03a, age_m = s1q03b) |>
-#   # dplyr::mutate(age_m = if_else(is.na(age_m),0,age_m)) |> # changing na values in age_m to 0
-#   # dplyr::mutate(age_m_total = (age_y * 12 + age_m)) |>
-#   mutate(age_m_total = if_else(is.na(age_m), (age_y * 12), (age_y * 12 + age_m))) |>
-#   # Add the AME/AFE factors to the roster data
-#   dplyr::left_join(ame_factors, by = c("age_y" = "age")) |>
-#   dplyr::mutate(
-#     ame_base = dplyr::case_when(sex == "1. Male" ~ ame_m, sex == "2. Female" ~ ame_f),
-#     afe_base = dplyr::case_when(sex == "1. Male" ~ afe_m, sex == "2. Female" ~ afe_f),
-#     age_u2_cat = dplyr::case_when(
-#       # NOTE: Round here will ensure that decimals are not omitted in the calculation.
-#       round(age_m_total) %in% 0:5 ~ "0-5 months",
-#       round(age_m_total) %in% 6:8 ~ "6-8 months",
-#       round(age_m_total) %in% 9:11 ~ "9-11 months",
-#       round(age_m_total) %in% 12:23 ~ "12-23 months"
-#     )
-#   ) |>
-#   # Add the AME/AFE factors for the specific age categories
-#   dplyr::left_join(ame_spec_factors, by = c("age_u2_cat" = "cat")) |>
-#   # Dietary requirements for children under 1 year old
-#   dplyr::mutate(
-#     ame_lac = dplyr::case_when(
-#       age_m_total <= 6 ~ 0.124,
-#       (7 <= age_m_total & age_m_total <= 23) ~ 0.151
-#     ),
-#     afe_lac = dplyr::case_when(age_m_total <= 6 ~ 0.157, (7 <= age_m_total &
-#                                                             age_m_total <= 23) ~ 0.19)
-#   ) |>
-#   dplyr::rowwise() |>
-#   # TODO: Will it not be better to have the pregnancy values added at the same time here?
-#   dplyr::mutate(ame = sum(c(ame_base, ame_spec, ame_lac), na.rm = TRUE),
-#                 afe = sum(c(afe_base, afe_spec, afe_lac), na.rm = TRUE)) |>
-#   # Calculate number of individuals in the households
-#   dplyr::group_by(household_id) |> #column
-#   dplyr::summarize(
-#     hh_persons = dplyr::n(),
-#     hh_ame = sum(ame),
-#     hh_afe = sum(afe)
-#   ) |>
-#   # Merge with the pregnancy and
-#   dplyr::left_join(pregnantPersons) |>
-#   dplyr::rowwise() |>
-#   dplyr::mutate(hh_ame = sum(c(hh_ame, ame_preg), na.rm = T),
-#                 hh_afe = sum(c(hh_afe, afe_preg), na.rm = T)) |>
-#   dplyr::ungroup() |>
-#   # Fix single household factors
-#   dplyr::mutate(
-#     hh_ame = dplyr::if_else(hh_persons == 1, 1, hh_ame),
-#     hh_afe = dplyr::if_else(hh_persons == 1, 1, hh_afe)
-#   ) |>
-#   dplyr::select(household_id, hh_persons, hh_ame, hh_afe)
-# # dplyr::rename(hhid = HHID)
-
 
 # unit conversion factor
 # already cleaned on excel for shiro unit_cd 183,182,181,172,171,153,152,151,113,111,72,71,8,4
@@ -135,6 +46,7 @@ mutate(unit_cd = as.character(unit_cd),
                               region == "soddhar" ~ "90",
                               
   )) 
+
 #changing some cf with the salt cf & EFBDG
 ess_unit_cf <- ess_unit_cf |> 
   mutate(conversion_factor= case_when(unit=="Gram"~0.001,
@@ -163,25 +75,7 @@ ess_unit_cf <- ess_unit_cf |>
 
 ### Processing the consumption data
 
-# # Extract Standard food list to view in excel
-# ess_standard_food_list <- ess_cons |>
-#   select(item_cd) |>
-#   distinct() |>
-#   arrange()
-# # write_csv(ess_standard_food_list,here::here("ess_standard_food_list.csv"))
-# 
-# ess_non_standard_food_list <- ess_cons |>
-#   filter(!is.na(s6aq01_os)) |>
-#   select(item_cd,s6aq01_os) |>
-#   # distinct() |>
-#   arrange() |>
-#   mutate(standard_item_cd="") |>
-#   group_by(item_cd,s6aq01_os)|>
-#   summarise(count = n()) |>
-#   arrange(desc(count))
-#write_csv(ess_non_standard_food_list,here::here("ess_non_standard_food_list.csv"))
-
-
+# converting other food to standard food list
 ess_cons <- ess_cons |> 
   mutate(item_cd = case_when(otherFood %in% c("Buna" ,"buna") ~ "801. Coffee",
                              otherFood == "abish" ~ "208. Fenugreek",
@@ -200,32 +94,9 @@ ess_cons <- ess_cons |>
                              #otherFood == "apple" ~ "1001. Pineapple", # to add food items
                              TRUE~ item_cd)) 
 
-# #removing unreplaced other food items
-# ess_cons <- ess_cons %>%
-#   filter(!grepl("Other", item_cd)) |> View()
-
-# #converting non standard units to standard units
-# #extracting to view in excel
-# ess_standard_unit <- ess_cons |> 
-#   filter(!is.na(s6aq02b)) |>
-#   select(item_cd,s6aq02b) |>
-#   distinct() |> 
-#   arrange() |> 
-# #write_csv(ess_standard_unit,here::here("ess_standard_unit.csv")) 
-# 
-# ess_non_standard_unit <- ess_cons |>
-#   filter(!is.na(s6aq02b)) |>
-#   filter(!is.na(s6aq02b_os)) |>
-#   select(item_cd,s6aq02b,s6aq02b_os) |>
-#   #distinct() |>
-#   arrange() |>
-#   mutate(standard_unit_cd="") |>
-#   group_by(item_cd,s6aq02b,s6aq02b_os)|>
-#   summarise(count = n()) |>
-#   arrange(desc(count))
-#write_csv(ess_non_standard_unit,here::here("ess_non_standard_unit.csv"))
 
 
+#converting non standard units to standard units
 ess_cons <- ess_cons |> 
   mutate(s6aq02b = case_when(item_cd == "101. Teff" & othermeasuringUnit == "KG" ~ "1.Kilogram",
                              item_cd == "303. SESAME" & othermeasuringUnit == "KG" ~ "1.Kilogram",
@@ -382,31 +253,6 @@ ess_cons <- left_join(ess_cons,ess_wealth, by = c("household_id"))
 table(ess_wealth$cons_quint)
 count(ess_wealth$household_id)
 names(ess_cons)
-
-#calculating wealth quintiles Liberty
-# pc_quintiles <- quantile(ess_wealth$total_cons_ann,probs = seq(0, 1, 0.2))
-# 
-# ess_wealth |> 
-#   mutate(new_quintiles = case_when(total_cons_ann < pc_quintiles[[2]] ~ 1,
-#                                    total_cons_ann >= pc_quintiles[[2]] & total_cons_ann < pc_quintiles[[3]] ~ 2,
-#                                    total_cons_ann >= pc_quintiles[[3]] & total_cons_ann < pc_quintiles[[4]] ~ 3,
-#                                    total_cons_ann >= pc_quintiles[[4]] & total_cons_ann < pc_quintiles[[5]] ~ 4,
-#                                    total_cons_ann >= pc_quintiles[[5]] ~ 5)) |> 
-#   select(household_id,new_quintiles,cons_quint) 
-# 
-# #calculating wealth quintiles Tom
-# totalcons_pc_quintiles <- quantile(ess_wealth$total_cons_ann, probs = seq(0, 1, 0.2)) #Finds quintiles for pc values
-# location_data$totcons_quintile <- 5 #creates the quintile pc column, fills it with 5 (highest value)
-# 
-# location_data[location_data$expmR < totalcons_pc_quintiles[5], "totcons_quintile"] <- 4 #for pc quintile, overwrites value to 4 if under the cutoff
-# 
-# location_data[location_data$expmR < totalcons_pc_quintiles[4], "totcons_quintile"] <- 3 #repeat's process above, for 3
-# 
-# location_data[location_data$expmR < totalcons_pc_quintiles[3], "totcons_quintile"] <- 2 #and again
-# 
-# location_data[location_data$expmR < totalcons_pc_quintiles[2], "totcons_quintile"] <- 1 #and again
-# 
-# table(location_data$totcons_quintile)
 
 #joining with the gps data
 ess_cons <- left_join(ess_cons,ess_gps, by = c("household_id")) 
